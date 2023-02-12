@@ -41,6 +41,38 @@ def get_rank_difficulty(data):
         
     return(data)
 
+
+def get_points_difficulty(data):
+    data['clubs_list'] = list(set(data['df']['home_team']) | set(data['df']['away_team']))
+    data['points_df'] = pd.DataFrame()
+
+
+    for i, club in enumerate(data['clubs_list']):
+        data['temp_df'] = pd.DataFrame()
+        club_home_points = data['df'].loc[data['df']['home_team' ] == club, 'home_points'].sum()
+        club_away_points = data['df'].loc[data['df']['away_team' ] == club, 'away_points'].sum()
+
+        club_home_games = data['df'].loc[data['df']['home_team' ] == club, 'home_points'].count()
+        club_away_games = data['df'].loc[data['df']['away_team' ] == club, 'away_points'].count()
+
+
+        data['temp_df']['club'] = [club]
+        data['temp_df']['games_played'] = [club_home_games + club_away_games]
+        data['temp_df']['points'] = [club_home_points + club_away_points]    
+
+        data['points_df'] = data['points_df'].append(data['temp_df'])
+
+        data['points_df'] = data['points_df'].sort_values(by=['points', 'games_played'], ascending = [False, True])    
+        data['points_df']['curr_rank'] = data['points_df']['points'].rank(ascending = False)
+        data['points_df'] = data['points_df'].reset_index(drop=True)
+        data['points_df'].index = data['points_df'].index + 1
+        
+    data['points_df']['difficulty'] = data['points_df']['points']
+    data['difficulty_dict'] = pd.Series(data['points_df']['difficulty'].values, data['points_df']['club'].values).to_dict()
+        
+    return(data)
+
+
 def get_remining_difficulty(data):
     for i, club in enumerate(data['clubs_list']):
         all_clubs = list(data['points_df']['club'])
